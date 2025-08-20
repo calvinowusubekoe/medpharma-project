@@ -233,22 +233,25 @@ export const movePatient = (req, res) => {
 export const getPatientQueueStatus = (req, res) => {
   try {
     if (req.user.userType !== 'patient') {
-      return res.status(403).json({ error: 'Access denied. Patients only.' });
+      return res.status(403).json({ error: 'Only patients can check their queue status' });
     }
 
-    const queueInfo = Queue.isPatientInAnyQueue(req.user.id);
-    
-    if (!queueInfo) {
+    const patientId = req.user.id;
+    const queueStatus = Queue.isPatientInAnyQueue(patientId);
+
+    if (!queueStatus) {
       return res.json({
+        success: true,
         inQueue: false,
-        message: 'You are not currently in any queue'
+        message: 'Not currently in any queue'
       });
     }
 
-    const { doctorId, entry } = queueInfo;
+    const { doctorId, entry } = queueStatus;
     const doctor = Doctor.findById(doctorId);
 
     res.json({
+      success: true,
       inQueue: true,
       queueEntry: {
         id: entry.id,
@@ -258,19 +261,54 @@ export const getPatientQueueStatus = (req, res) => {
         estimatedWaitTime: entry.estimatedWaitTime,
         status: entry.status,
         joinedAt: entry.joinedAt,
-        consultationType: entry.consultationType
-      },
-      doctor: doctor ? {
-        id: doctor.id,
-        name: doctor.name,
-        specialty: doctor.specialty,
-        availability: doctor.availability,
-        isOnline: doctor.isOnline
-      } : null
+        consultationType: entry.consultationType,
+        symptoms: entry.symptoms,
+        urgencyLevel: entry.urgencyLevel
+      }
     });
 
   } catch (error) {
     console.error('Get patient queue status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Check if patient is in queue for appointment cancellation
+export const checkPatientInQueue = (req, res) => {
+  try {
+    if (req.user.userType !== 'patient') {
+      return res.status(403).json({ error: 'Only patients can check queue status' });
+    }
+
+    const patientId = req.user.id;
+    const queueStatus = Queue.isPatientInAnyQueue(patientId);
+
+    if (!queueStatus) {
+      return res.json({
+        success: true,
+        inQueue: false,
+        message: 'Not currently in any queue'
+      });
+    }
+
+    const { doctorId, entry } = queueStatus;
+
+    res.json({
+      success: true,
+      inQueue: true,
+      canCancel: entry.status === 'waiting' || entry.status === 'ready',
+      queueEntry: {
+        id: entry.id,
+        doctorId: entry.doctorId,
+        doctorName: entry.doctorName,
+        position: entry.position,
+        status: entry.status,
+        joinedAt: entry.joinedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Check patient in queue error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -314,5 +352,6 @@ export default {
   leaveQueue,
   movePatient,
   getPatientQueueStatus,
-  getQueueStats
+  getQueueStats,
+  checkPatientInQueue
 };

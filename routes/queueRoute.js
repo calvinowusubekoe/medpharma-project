@@ -6,7 +6,8 @@ import {
   leaveQueue,
   movePatient,
   getPatientQueueStatus,
-  getQueueStats
+  getQueueStats,
+  checkPatientInQueue
 } from '../controllers/queueController.js';
 
 const router = express.Router();
@@ -22,8 +23,9 @@ router.post('/move', movePatient);
 
 // Patient-specific routes
 router.get('/my-status', getPatientQueueStatus);
+router.get('/check-status', checkPatientInQueue);
 
 // Doctor-specific routes
-router.get('/stats/:doctorId?', getQueueStats);
+router.get('/stats', getQueueStats);
 
 export default router;
