@@ -169,9 +169,7 @@ socket.on('queueUpdate', (data) => {
 
 ## 🔮 Future Enhancements
 
-- Database integration (PostgreSQL/MongoDB)
-- User authentication and authorization
-- Doctor dashboard for queue management
+
 - Advanced queue algorithms
 - SMS/Email notifications
 - Video consultation integration
